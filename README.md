@@ -26,6 +26,6 @@ make build
 
 And use
 
-``make incr`` for incremental backup
-``make full`` for full backup
+``make incr`` for incremental backup,
+``make full`` for full backup,
 ``make latest`` for restore latest backup
