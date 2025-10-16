@@ -1,0 +1,44 @@
+---
+
+x-wal-g: &wal-g
+  image: ${WAL_G_IMAGE:-apecloud/wal-g:postgres-1.2}
+  environment:
+    WALG_PG_HOST: ${POSTGRES_HOST:-127.0.0.1}
+    WALG_PG_PORT: ${POSTGRES_PORT:-5432}
+    WALG_PG_USER: ${POSTGRES_USER:-postgres}
+    WALG_PG_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    WALG_PG_DATABASE: ${POSTGRES_DB:-postgres}
+    WALG_FILE_PREFIX: ${WALG_FILE_PREFIX:-/var/lib/wal-g/backups}
+    BACKUP_TYPE: ${BACKUP_TYPE:-full}
+    BACKUP_NAME: ${BACKUP_NAME:-auto_backup_$(date +%Y-%m-%d_%H-%M-%S)}
+    RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
+  volumes:
+    - ./backups:/var/lib/wal-g/backups
+    - ./${PG_DATA:-./pg_data}:/var/lib/wal-g/restore
+
+services:
+  wal-g-backup:
+    <<: *wal-g
+    container_name: wal-g-backup
+    command: >
+      bash -c "
+        if [ '${BACKUP_TYPE}' = 'incr' ]; then
+          echo '🟡 ${INCR_BACKUP_TEXT:-Incremental backup is in progress}...';
+          wal-g backup-push --from-replica;
+        else
+          echo '🟢 ${FULL_BACKUP_TEXT:-Full backup is in progress}...';
+          wal-g backup-push;
+        fi
+      "
+
+  wal-g-restore:
+    <<: *wal-g
+    container_name: wal-g-restore
+    volumes:
+      - ./backups:/var/lib/wal-g/backups
+    command: >
+      bash -c "
+        echo '🧩 ${RESTORE_PROGRESS:-Restoring from backup} ${RESTORE_BACKUP_NAME}...';
+        wal-g backup-fetch /var/lib/wal-g/restore ${RESTORE_BACKUP_NAME};
+        echo '✅ ${RESTORE_COMPLETE:-Recovery completed. Data saved to} /var/lib/wal-g/restore';
+      "
