@@ -2,12 +2,16 @@
 
 x-wal-g: &wal-g
   image: ${WAL_G_IMAGE:-apecloud/wal-g:postgres-1.2}
+  # build:
+  #   context: .
+    # args:
+    #   GRAFANA_VERSION: $GRAFANA_VERSION
   environment:
-    WALG_PG_HOST: ${POSTGRES_HOST:-127.0.0.1}
-    WALG_PG_PORT: ${POSTGRES_PORT:-5432}
-    WALG_PG_USER: ${POSTGRES_USER:-postgres}
-    WALG_PG_PASSWORD: ${POSTGRES_PASSWORD:-password}
-    WALG_PG_DATABASE: ${POSTGRES_DB:-postgres}
+    PGHOST: ${POSTGRES_HOST:-127.0.0.1}
+    PGPORT: ${POSTGRES_PORT:-5432}
+    PGUSER: ${POSTGRES_USER:-postgres}
+    PGPASSWORD: ${POSTGRES_PASSWORD:-password}
+    PGDATABASE: ${POSTGRES_DB:-postgres}
     WALG_FILE_PREFIX: ${WALG_FILE_PREFIX:-/var/lib/wal-g/backups}
     BACKUP_TYPE: ${BACKUP_TYPE:-full}
     BACKUP_NAME: ${BACKUP_NAME:-auto_backup_$(date +%Y-%m-%d_%H-%M-%S)}
@@ -24,7 +28,7 @@ services:
       bash -c "
         if [ '${BACKUP_TYPE}' = 'incr' ]; then
           echo '🟡 ${INCR_BACKUP_TEXT:-Incremental backup is in progress}...';
-          wal-g backup-push --from-replica;
+          ;
         else
           echo '🟢 ${FULL_BACKUP_TEXT:-Full backup is in progress}...';
           wal-g backup-push;
@@ -42,3 +46,11 @@ services:
         wal-g backup-fetch /var/lib/wal-g/restore ${RESTORE_BACKUP_NAME};
         echo '✅ ${RESTORE_COMPLETE:-Recovery completed. Data saved to} /var/lib/wal-g/restore';
       "
+
+  wal-g-test:
+    <<: *wal-g
+    container_name: wal-g-test
+    # Заглушка: контейнер запустится и будет висеть в фоне
+    command: "sleep infinity"  # Или sleep infinity (если tail недоступен)
+    # Если нужно переопределить ENTRYPOINT (из-за бага в образе):
+    # entrypoint: ["/bin/bash"]

@@ -13,6 +13,7 @@ PURPLE='\e[1;35m'       # Purple
 CYAN='\e[1;36m'         # Cyan
 WHITE='\e[1;37m'        # White
 UCYAN='\e[4;36m'        # Cyan
+USER_ID = $(shell id -u)
 ifneq (,$(wildcard .env))
     include .env
     export $(shell sed 's/=.*//' .env)
@@ -55,7 +56,7 @@ condb:
 
 conn:
 	@printf "$(OK_COLOR)==== Connect to database ${name}... ====$(NO_COLOR)\n"
-	@docker exec -it --user postgres postgres bash
+	@docker exec -it wal-g-test bash
 
 down:
 	@printf "$(ERROR_COLOR)==== Stopping configuration ${name}... ====$(NO_COLOR)\n"
@@ -67,6 +68,7 @@ env:
 		echo "$(ERROR_COLOR).env file already exists!$(NO_COLOR)"; \
 	else \
 		cp .env.example .env; \
+		echo "USER_ID=${USER_ID}" >> .env \
 		echo "$(OK_COLOR).env file successfully created!$(NO_COLOR)"; \
 	fi
 
@@ -100,6 +102,10 @@ push:
 show:
 	@printf "$(BLUE)==== Current environment variables... ====$(NO_COLOR)\n"
 	@env | grep -E 'POSTGRES_|PG_DATA|RESTORE_BACKUP_NAME' || true
+
+test:
+	@printf "$(WARN_COLOR)==== Start test docker iamge... ====$(NO_COLOR)\n"
+	@docker-compose run --rm wal-g-test
 
 clean: down
 	@printf "$(ERROR_COLOR)==== Cleaning configuration ${name}... ====$(NO_COLOR)\n"
