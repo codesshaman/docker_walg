@@ -23,7 +23,7 @@ x-wal-g: &wal-g
   volumes:
     - ./backups:/var/lib/wal-g/backups:z
     - ./restore:/var/lib/wal-g/restore:z
-    - ./pgdata:/var/lib/postgresql/data:z
+    - ${BACKUP_FOLDER}:/var/lib/postgresql/data:z
 
 services:
   wal-g-backup:

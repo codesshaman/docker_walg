@@ -1,5 +1,5 @@
 #wal-g backup-push
-pg_data
 backups
 restore
+pgdata
 .env
