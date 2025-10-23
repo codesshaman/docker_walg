@@ -2,10 +2,6 @@
 
 x-wal-g: &wal-g
   image: ${WAL_G_IMAGE:-apecloud/wal-g:postgres-1.2}
-  # build:
-  #   context: .
-    # args:
-    #   GRAFANA_VERSION: $GRAFANA_VERSION
   environment:
     PGHOST: ${POSTGRES_HOST:-127.0.0.1}
     PGPORT: ${POSTGRES_PORT:-5432}
@@ -16,9 +12,10 @@ x-wal-g: &wal-g
     BACKUP_TYPE: ${BACKUP_TYPE:-full}
     BACKUP_NAME: ${BACKUP_NAME:-auto_backup_$(date +%Y-%m-%d_%H-%M-%S)}
     RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
+    USER_ID: ${USER_ID}
   volumes:
-    - ./backups:/var/lib/wal-g/backups
-    - ./${PG_DATA:-./pg_data}:/var/lib/wal-g/restore
+    - ./backups:/var/lib/wal-g/backups:z
+    - ./restore:/var/lib/wal-g/restore:z
 
 services:
   wal-g-backup:
@@ -26,12 +23,12 @@ services:
     container_name: wal-g-backup
     command: >
       bash -c "
-        if [ '${BACKUP_TYPE}' = 'incr' ]; then
-          echo '🟡 ${INCR_BACKUP_TEXT:-Incremental backup is in progress}...';
-          ;
-        else
-          echo '🟢 ${FULL_BACKUP_TEXT:-Full backup is in progress}...';
+        if [ \"$${BACKUP_TYPE}\" = 'incr' ]; then
+          echo '🟡 $${INCR_BACKUP_TEXT:-Incremental backup is in progress}...';
           wal-g backup-push;
+        else
+          echo '🟢 $${FULL_BACKUP_TEXT:-Full backup is in progress}...';
+          wal-g backup-push /var/lib/wal-g;
         fi
       "
 
@@ -42,9 +39,9 @@ services:
       - ./backups:/var/lib/wal-g/backups
     command: >
       bash -c "
-        echo '🧩 ${RESTORE_PROGRESS:-Restoring from backup} ${RESTORE_BACKUP_NAME}...';
-        wal-g backup-fetch /var/lib/wal-g/restore ${RESTORE_BACKUP_NAME};
-        echo '✅ ${RESTORE_COMPLETE:-Recovery completed. Data saved to} /var/lib/wal-g/restore';
+        echo '🧩 $${RESTORE_PROGRESS:-Restoring from backup} $${RESTORE_BACKUP_NAME}...';
+        wal-g backup-fetch /var/lib/wal-g/restore $${RESTORE_BACKUP_NAME};
+        echo '✅ $${RESTORE_COMPLETE:-Recovery completed. Data saved to} /var/lib/wal-g/restore';
       "
 
   wal-g-test:

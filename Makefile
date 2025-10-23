@@ -37,6 +37,7 @@ help:
 	@echo -e "$(WARN_COLOR)- make incr			: Create incremental backup"
 	@echo -e "$(WARN_COLOR)- make latest			: Restore latest backup"
 	@echo -e "$(WARN_COLOR)- make re			: Rebuild configuration"
+	@echo -e "$(WARN_COLOR)- make test			: Build test container"
 	@echo -e "$(WARN_COLOR)- make ps			: View configuration"
 	@echo -e "$(WARN_COLOR)- make push			: Push changes to the github"
 	@echo -e "$(WARN_COLOR)- make clean			: Cleaning configuration$(NO_COLOR)"
@@ -54,6 +55,10 @@ condb:
 	@printf "$(OK_COLOR)==== Connect to database ${name}... ====$(NO_COLOR)\n"
 	@docker exec -it --user postgres postgres psql
 
+con:
+	@printf "$(OK_COLOR)==== Connect to database ${name}... ====$(NO_COLOR)\n"
+	@docker exec -it wal-g-test bash
+
 conn:
 	@printf "$(OK_COLOR)==== Connect to database ${name}... ====$(NO_COLOR)\n"
 	@docker exec -it wal-g-test bash
@@ -68,7 +73,7 @@ env:
 		echo "$(ERROR_COLOR).env file already exists!$(NO_COLOR)"; \
 	else \
 		cp .env.example .env; \
-		echo "USER_ID=${USER_ID}" >> .env \
+		echo "USER_ID=${USER_ID}" >> .env && \
 		echo "$(OK_COLOR).env file successfully created!$(NO_COLOR)"; \
 	fi
 
