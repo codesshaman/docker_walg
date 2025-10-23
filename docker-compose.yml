@@ -23,6 +23,7 @@ x-wal-g: &wal-g
   volumes:
     - ./backups:/var/lib/wal-g/backups:z
     - ./restore:/var/lib/wal-g/restore:z
+    - ./pgdata:/var/lib/postgresql/data:z
 
 services:
   wal-g-backup:
@@ -35,7 +36,7 @@ services:
           wal-g backup-push /var/lib/postgresql/data;
         else
           echo '🟢 $${FULL_BACKUP_TEXT:-Full backup is in progress}...';
-          wal-g backup-push /var/lib/wal-g;
+          wal-g backup-push /var/lib/postgresql/data --full;
         fi
       "
 
