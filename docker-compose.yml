@@ -3,16 +3,23 @@
 x-wal-g: &wal-g
   image: ${WAL_G_IMAGE:-apecloud/wal-g:postgres-1.2}
   environment:
+    # 💿 Postgres
     PGHOST: ${POSTGRES_HOST:-127.0.0.1}
     PGPORT: ${POSTGRES_PORT:-5432}
     PGUSER: ${POSTGRES_USER:-postgres}
     PGPASSWORD: ${POSTGRES_PASSWORD:-password}
     PGDATABASE: ${POSTGRES_DB:-postgres}
-    WALG_FILE_PREFIX: ${WALG_FILE_PREFIX:-/var/lib/wal-g/backups}
+    WALG_FILE_PREFIX: ${WALG_FILE_PREFIX}
     BACKUP_TYPE: ${BACKUP_TYPE:-full}
+    # 💾 S3-хранилище
+    WALG_S3_PREFIX: ${S3_PREFIX}
+    AWS_ACCESS_KEY_ID: ${S3_USER}
+    AWS_SECRET_ACCESS_KEY: ${S3_PASS}
+    AWS_ENDPOINT: ${S3_HOST}
+    AWS_REGION: ${AWS_REGION}
+    # 💾 Backups
     BACKUP_NAME: ${BACKUP_NAME:-auto_backup_$(date +%Y-%m-%d_%H-%M-%S)}
-    RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
-    USER_ID: ${USER_ID}
+    # RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
   volumes:
     - ./backups:/var/lib/wal-g/backups:z
     - ./restore:/var/lib/wal-g/restore:z
@@ -25,7 +32,7 @@ services:
       bash -c "
         if [ \"$${BACKUP_TYPE}\" = 'incr' ]; then
           echo '🟡 $${INCR_BACKUP_TEXT:-Incremental backup is in progress}...';
-          wal-g backup-push;
+          wal-g backup-push /var/lib/postgresql/data;
         else
           echo '🟢 $${FULL_BACKUP_TEXT:-Full backup is in progress}...';
           wal-g backup-push /var/lib/wal-g;
