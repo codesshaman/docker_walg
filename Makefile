@@ -36,6 +36,7 @@ help:
 	@echo -e "$(WARN_COLOR)- make git			: Set user and mail for git"
 	@echo -e "$(WARN_COLOR)- make incr			: Create incremental backup"
 	@echo -e "$(WARN_COLOR)- make latest			: Restore latest backup"
+	@echo -e "$(WARN_COLOR)- make log			: Show backup container logs"
 	@echo -e "$(WARN_COLOR)- make re			: Rebuild configuration"
 	@echo -e "$(WARN_COLOR)- make test			: Build test container"
 	@echo -e "$(WARN_COLOR)- make ps			: View configuration"
@@ -92,6 +93,14 @@ incr:
 latest:
 	@printf "$(WARN_COLOR)==== Restore latest backup... ====$(NO_COLOR)\n"
 	docker compose run --rm wal-g-restore
+
+log:
+	@printf "$(WARN_COLOR)==== Restore latest backup... ====$(NO_COLOR)\n"
+	@docker logs wal-g-backup
+
+logs:
+	@printf "$(WARN_COLOR)==== Restore latest backup... ====$(NO_COLOR)\n"
+	@docker logs wal-g-backup
 
 re:	down
 	@printf "$(OK_COLOR)==== Rebuild configuration ${name}... ====$(NO_COLOR)\n"

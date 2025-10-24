@@ -17,6 +17,7 @@ x-wal-g: &wal-g
     AWS_SECRET_ACCESS_KEY: ${S3_PASS}
     AWS_ENDPOINT: ${S3_HOST}
     AWS_REGION: ${AWS_REGION}
+    AWS_S3_FORCE_PATH_STYLE: "true"
     # 💾 Backups
     BACKUP_NAME: ${BACKUP_NAME:-auto_backup_$(date +%Y-%m-%d_%H-%M-%S)}
     # RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
