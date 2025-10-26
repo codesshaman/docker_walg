@@ -1,13 +1,13 @@
 ---
 
 x-wal-g: &wal-g
-  image: ${WAL_G_IMAGE:-apecloud/wal-g:postgres-1.2}
+  image: ${WAL_G_IMAGE:-stratospire/wal-g:1.0}
   environment:
     # 💿 Postgres
     PGHOST: ${POSTGRES_HOST:-127.0.0.1}
     PGPORT: ${POSTGRES_PORT:-5432}
     PGUSER: ${POSTGRES_USER:-postgres}
-    PGPASSWORD: ${POSTGRES_PASSWORD:-password}
+    PGPASSWORD: ${POSTGRES_PASS:-postgres}
     PGDATABASE: ${POSTGRES_DB:-postgres}
     WALG_FILE_PREFIX: ${WALG_FILE_PREFIX}
     BACKUP_TYPE: ${BACKUP_TYPE:-full}
@@ -40,6 +40,9 @@ services:
           wal-g backup-push /var/lib/postgresql/data --full;
         fi
       "
+    networks:
+      network:
+        ipv4_address: $BACKUP_HOST
 
   wal-g-restore:
     <<: *wal-g
@@ -52,6 +55,9 @@ services:
         wal-g backup-fetch /var/lib/wal-g/restore $${RESTORE_BACKUP_NAME};
         echo '✅ $${RESTORE_COMPLETE:-Recovery completed. Data saved to} /var/lib/wal-g/restore';
       "
+    networks:
+      network:
+        ipv4_address: $RESTORE_HOST
 
   wal-g-test:
     <<: *wal-g
@@ -60,3 +66,9 @@ services:
     command: "sleep infinity"  # Или sleep infinity (если tail недоступен)
     # Если нужно переопределить ENTRYPOINT (из-за бага в образе):
     # entrypoint: ["/bin/bash"]
+
+networks:
+  network:
+    name: $POSTGRES_NET
+    external: true
+    driver: bridge
