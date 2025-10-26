@@ -37,8 +37,9 @@ help:
 	@echo -e "$(WARN_COLOR)- make incr			: Create incremental backup"
 	@echo -e "$(WARN_COLOR)- make latest			: Restore latest backup"
 	@echo -e "$(WARN_COLOR)- make log			: Show backup container logs"
-	@echo -e "$(WARN_COLOR)- make re			: Rebuild configuration"
 	@echo -e "$(WARN_COLOR)- make ps			: View configuration"
+	@echo -e "$(WARN_COLOR)- make re			: Rebuild configuration"
+	@echo -e "$(WARN_COLOR)- make rest <backup>		: Rebuild configuration"
 	@echo -e "$(WARN_COLOR)- make push			: Push changes to the github"
 	@echo -e "$(WARN_COLOR)- make clean			: Cleaning configuration$(NO_COLOR)"
 
@@ -100,16 +101,28 @@ logs:
 	@printf "$(WARN_COLOR)==== Restore latest backup... ====$(NO_COLOR)\n"
 	@docker logs wal-g-backup
 
-re:	down
-	@printf "$(OK_COLOR)==== Rebuild configuration ${name}... ====$(NO_COLOR)\n"
-	@docker-compose -f ./docker-compose.yml up -d --build
-
 ps:
 	@printf "$(BLUE)==== View configuration ${name}... ====$(NO_COLOR)\n"
 	@docker-compose -f ./docker-compose.yml ps
 
 push:
 	@bash scripts/push.sh
+
+re:	down
+	@printf "$(OK_COLOR)==== Rebuild configuration ${name}... ====$(NO_COLOR)\n"
+	@docker-compose -f ./docker-compose.yml up -d --build
+
+rest:
+	@printf "$(WARN_COLOR)==== Restore backup from ${name}... ====$(NO_COLOR)\n"
+	@$(eval args := $(words $(filter-out --,$(MAKECMDGOALS))))
+	@if [ "$(args)" -eq 2 ]; then \
+		echo "$(OK_COLOR)Restore backup $(word 2,$(MAKECMDGOALS))$(NO_COLOR)"; \
+		RESTORE_BACKUP_NAME=$(word 2,$(MAKECMDGOALS)) docker compose run --rm wal-g-restore; \
+	elif [ "$(args)" -gt 2 ]; then \
+		echo "$(ERROR_COLOR)The backup name must not contain spaces!$(NO_COLOR)"; \
+	else \
+		echo "$(ERROR_COLOR)Enter the name of the backup!$(NO_COLOR)"; \
+	fi
 
 show:
 	@printf "$(BLUE)==== Current environment variables... ====$(NO_COLOR)\n"
