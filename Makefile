@@ -53,9 +53,9 @@ config:
 	@printf "$(OK_COLOR)==== Wiew container configuration... ====$(NO_COLOR)\n"
 	@docker-compose config
 
-condb:
-	@printf "$(OK_COLOR)==== Connect to database ${name}... ====$(NO_COLOR)\n"
-	@docker exec -it --user postgres postgres psql
+conf:
+	@printf "$(WARN_COLOR)==== Change postgres config file... ====$(NO_COLOR)\n"
+	@docker-compose -f ./docker-compose.yml up -d wal-g-conf
 
 con:
 	@printf "$(OK_COLOR)==== Connect to database ${name}... ====$(NO_COLOR)\n"
@@ -122,16 +122,12 @@ re:	down
 rest:
 	@printf "$(WARN_COLOR)==== Restore backup from ${name}... ====$(NO_COLOR)\n"
 	@$(eval args := $(words $(filter-out --,$(MAKECMDGOALS))))
-	@if [ "$(args)" -eq 2 ]; then \
+	@if [ "$(args)" -eq 3 ]; then \
 		echo "$(OK_COLOR)Restore backup $(word 2,$(MAKECMDGOALS))$(NO_COLOR)"; \
-		RESTORE_BACKUP_NAME=$(word 2,$(MAKECMDGOALS)); \
-		bash scripts/restore.sh ${RESTORE_BACKUP_NAME}; \
-	elif [ "$(args)" -gt 2 ]; then \
-		echo "$(ERROR_COLOR)The backup name must not contain spaces!$(NO_COLOR)"; \
+		bash scripts/restore.sh $(word 2,$(MAKECMDGOALS)) $(word 3,$(MAKECMDGOALS)); \
 	else \
-		echo "$(ERROR_COLOR)Enter the name of the backup!$(NO_COLOR)"; \
+		echo "$(ERROR_COLOR)Enter the name of the backup and backup date from make list command!$(NO_COLOR)"; \
 	fi
-	
 
 show:
 	@printf "$(BLUE)==== Current environment variables... ====$(NO_COLOR)\n"
@@ -153,4 +149,4 @@ fclean:
 	# @docker network prune --force
 	# @docker volume prune --force
 
-.PHONY	: all help build conn down re ps test clean fclean
+.PHONY	: all help build conn down re rest ps test clean fclean

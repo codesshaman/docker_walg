@@ -20,11 +20,12 @@ x-wal-g: &wal-g
     AWS_S3_FORCE_PATH_STYLE: "true"
     # 💾 Backups
     BACKUP_NAME: ${BACKUP_NAME:-auto_backup_$(date +%Y-%m-%d_%H-%M-%S)}
+    BACKUP_TIME: "" # Не трогать. Меняется автоматически.
     # RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
   volumes:
     - ./backups:/var/lib/wal-g/backups:z
-    - ./restore:/var/lib/wal-g/restore:z
-    - $DB_VOLUME:/var/lib/postgresql/data:z
+    - $DB_VOLUME:/var/lib/wal-g/restore
+    - $DB_VOLUME:/var/lib/postgresql/data
 
 services:
   wal-g-backup:
@@ -47,8 +48,8 @@ services:
   wal-g-restore:
     <<: *wal-g
     container_name: wal-g-restore
-    # command: >
-    #   "wal-g backup-fetch /var/lib/postgresql/data \"$${RESTORE_BACKUP_NAME:-LATEST}\";"
+    command: >
+      "echo 'Restore is running!'"
     networks:
       network:
         ipv4_address: $RESTORE_HOST
@@ -57,20 +58,35 @@ services:
     <<: *wal-g
     container_name: wal-g-list
     entrypoint: /bin/sh
-    command: -c 'wal-g backup-list | tail -n +2 | awk '\''{gsub(/T/, " ",$2); gsub(/\.[0-9]+Z/, "", $2); gsub(/Z/, "", $2); print $2}'\'''
+    # command: -c 'wal-g backup-list | tail -n +2 | awk '\''{gsub(/T/, " ",$2); gsub(/\.[0-9]+Z/, "", $2); gsub(/Z/, "", $2); print $2}'\'''
+    command: -c "wal-g backup-list | tail -n +2 | awk '{print \$1, \$2}'"
     networks:
       network:
         ipv4_address: $LIST_HOST
 
+  wal-g-conf:
+    <<: *wal-g
+    container_name: wal-g-conf
+    entrypoint: /bin/sh
+    command: >
+      -c '
+      sed -i "s|^#restore_command *=.*|restore_command = '\''wal-g wal-fetch \"%f\" \"%p\"'\''|" "/var/lib/postgresql/data/postgresql.conf";
+      sed -i "s|^#recovery_target_timeline *=.*|recovery_target_timeline = '\''latest'\''|" "/var/lib/postgresql/data/postgresql.conf";
+      sed -i "s|^#recovery_target_time *=.*|recovery_target_time = '\''$BACKUP_TIME'\''|" "/var/lib/postgresql/data/postgresql.conf";
+      '
+    networks:
+      network:
+        ipv4_address: $CONF_HOST
+
   wal-g-test:
     <<: *wal-g
     container_name: wal-g-test
+    restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
     command: ["while true; do sleep 3600; done"]
     networks:
       network:
         ipv4_address: $TEST_HOST
-    restart: unless-stopped
 
 networks:
   network:
