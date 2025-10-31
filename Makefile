@@ -36,10 +36,12 @@ help:
 	@echo -e "$(WARN_COLOR)- make git			: Set user and mail for git"
 	@echo -e "$(WARN_COLOR)- make incr			: Create incremental backup"
 	@echo -e "$(WARN_COLOR)- make latest			: Restore latest backup"
+	@echo -e "$(WARN_COLOR)- make list			: Show list of backup dates"
 	@echo -e "$(WARN_COLOR)- make log			: Show backup container logs"
 	@echo -e "$(WARN_COLOR)- make ps			: View configuration"
 	@echo -e "$(WARN_COLOR)- make re			: Rebuild configuration"
 	@echo -e "$(WARN_COLOR)- make rest <backup>		: Rebuild configuration"
+	@echo -e "$(WARN_COLOR)- make test			: Start test container"
 	@echo -e "$(WARN_COLOR)- make push			: Push changes to the github"
 	@echo -e "$(WARN_COLOR)- make clean			: Cleaning configuration$(NO_COLOR)"
 
@@ -93,6 +95,11 @@ latest:
 	@printf "$(WARN_COLOR)==== Restore latest backup... ====$(NO_COLOR)\n"
 	docker compose run --rm wal-g-restore
 
+list:
+	@printf "$(WARN_COLOR)==== Show backup dates list... ====$(NO_COLOR)\n"
+	@docker compose run --rm wal-g-list > backups/list.txt
+	@cat ./backups/list.txt
+
 log:
 	@printf "$(WARN_COLOR)==== Restore latest backup... ====$(NO_COLOR)\n"
 	@docker logs wal-g-backup
@@ -117,16 +124,22 @@ rest:
 	@$(eval args := $(words $(filter-out --,$(MAKECMDGOALS))))
 	@if [ "$(args)" -eq 2 ]; then \
 		echo "$(OK_COLOR)Restore backup $(word 2,$(MAKECMDGOALS))$(NO_COLOR)"; \
-		RESTORE_BACKUP_NAME=$(word 2,$(MAKECMDGOALS)) docker compose run --rm wal-g-restore; \
+		RESTORE_BACKUP_NAME=$(word 2,$(MAKECMDGOALS)); \
+		bash scripts/restore.sh ${RESTORE_BACKUP_NAME}; \
 	elif [ "$(args)" -gt 2 ]; then \
 		echo "$(ERROR_COLOR)The backup name must not contain spaces!$(NO_COLOR)"; \
 	else \
 		echo "$(ERROR_COLOR)Enter the name of the backup!$(NO_COLOR)"; \
 	fi
+	
 
 show:
 	@printf "$(BLUE)==== Current environment variables... ====$(NO_COLOR)\n"
 	@env | grep -E 'POSTGRES_|PG_DATA|RESTORE_BACKUP_NAME' || true
+
+test:
+	@printf "$(WARN_COLOR)==== Create full backup... ====$(NO_COLOR)\n"
+	@docker-compose -f ./docker-compose.yml up -d wal-g-test
 
 clean: down
 	@printf "$(ERROR_COLOR)==== Cleaning configuration ${name}... ====$(NO_COLOR)\n"
@@ -140,4 +153,4 @@ fclean:
 	# @docker network prune --force
 	# @docker volume prune --force
 
-.PHONY	: all help build conn down re ps clean fclean
+.PHONY	: all help build conn down re ps test clean fclean
