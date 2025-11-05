@@ -24,8 +24,8 @@ x-wal-g: &wal-g
     # RESTORE_BACKUP_NAME: ${RESTORE_BACKUP_NAME:-LATEST}
   volumes:
     - ./backups:/var/lib/wal-g/backups:z
-    - $DB_VOLUME:/var/lib/wal-g/restore
-    - $DB_VOLUME:/var/lib/postgresql/data
+    - $DB_VOLUME:/var/lib/wal-g/restore:z
+    - $DB_VOLUME:/var/lib/postgresql/data:z
 
 services:
   wal-g-backup:
